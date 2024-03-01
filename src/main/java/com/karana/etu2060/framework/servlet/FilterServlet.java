@@ -31,11 +31,12 @@ public class FilterServlet implements Filter {
         String requestURI = httpRequest.getRequestURI();
         // Get the servlet path and set it as a request attribute
         String servletPath = httpRequest.getServletPath();
-        
+        String httpMethod = httpRequest.getMethod();
         // Check if the request is for a .css or .js file or .jsp or .html
         if(!requestURI.contains(".") && !servletPath.contains("index")) {
             // Forward the request to FrontServlet
-            request.setAttribute("servletPath", servletPath);
+            request.setAttribute("servletPath", servletPath + " " + httpMethod);
+            request.setAttribute("httpMethod", httpMethod);
             RequestDispatcher dispatcher = httpRequest.getRequestDispatcher("/FrontServlet");
             dispatcher.forward(request, response);
         }else{

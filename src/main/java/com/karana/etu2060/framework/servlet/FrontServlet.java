@@ -158,7 +158,7 @@ public class FrontServlet extends HttpServlet {
                 for(Method method : methods){
                     if(method.isAnnotationPresent(Url.class)){
                         Url annotation = method.getAnnotation(Url.class);
-                        temp.put(url + annotation.url(),new Mapping(element ,method.getName()));
+                        temp.put(url + annotation.url() + " " + annotation.method().getMethod(), new Mapping(element ,method.getName()));
                     }
                 }
             }
@@ -292,17 +292,6 @@ public class FrontServlet extends HttpServlet {
         }
         return methods[i];
     }
-
-    public void treatJson(PrintWriter out, HttpServletRequest request, HttpServletResponse response, Method method, Object obj, ArrayList<Object> args) throws Exception{
-        if(method.getAnnotation(Url.class).method().getMethod().equals(request.getMethod())){
-            Gson gson = new Gson();
-            response.setContentType("application/json"); // Définir le type de contenu comme JSON
-            response.setCharacterEncoding("UTF-8");
-            out.print( gson.toJson(method.invoke(obj , args.toArray())));
-        }else{
-            out.print("Wrong method");
-        }
-    }
     
     @SuppressWarnings("unchecked")
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
@@ -311,6 +300,7 @@ public class FrontServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
         ModelView view = null;
         Object obj = null;
+        String httpMethod = (String) request.getAttribute("httpMethod");
         String key = (String) request.getAttribute("servletPath");
         Mapping map = this.getMappingUrls().get(key);
         Method method = null;
@@ -319,7 +309,6 @@ public class FrontServlet extends HttpServlet {
         response.addHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Origin, X-Requested-With, Content-Type, Accept");
         response.addHeader("Access-Control-Max-Age", "1728000");
         try{
-            out.print(this.getMappingUrls());
             if(this.getMappingUrls().containsKey(key)){
                 map = this.getMappingUrls().get(key);  
                 String methodstr = map.getMethods();
@@ -341,29 +330,28 @@ public class FrontServlet extends HttpServlet {
                 Method[] listMethod = obj.getClass().getDeclaredMethods();
                 method = this.getMethod(listMethod, methodstr);
                 String session_value = (String) request.getSession().getAttribute(this.getSessionProfile());
-                if( method.isAnnotationPresent(Authentification.class) && !method.getAnnotation(Authentification.class).auth().isEmpty() && !method.getAnnotation(Authentification.class).auth().equals(session_value) ){
+                if(method.isAnnotationPresent(Authentification.class) && !method.getAnnotation(Authentification.class).auth().isEmpty() && !method.getAnnotation(Authentification.class).auth().equals(session_value) ){
                     throw new Exception("Please authenticate yourself<br>");
                 }
-
                 ArrayList<Object> args = new ArrayList<>();
                 // Verify if there are data sent
-                if( request.getParameterNames().hasMoreElements()){
+                if(request.getParameterNames().hasMoreElements()){
                     obj = setDynamic(request, obj);
                     args = getFunctionArgument( request , obj , method);
                 }
-                if( method.isAnnotationPresent(Json.class) ){
-                    if(method.getAnnotation(Url.class).method().getMethod().equals(request.getMethod())){
+                if(method.isAnnotationPresent(Json.class) ){
+                    if(method.getAnnotation(Url.class).method().getMethod().equals(httpMethod)){
                         Gson gson = new Gson();
                         response.setContentType("application/json"); // Définir le type de contenu comme JSON
                         response.setCharacterEncoding("UTF-8");
-                        out.print( gson.toJson(method.invoke(obj , args.toArray())));
+                        out.print(gson.toJson(method.invoke(obj , args.toArray())));
                     }else{
                         out.print("Wrong method");
                     }
                 }else{
                     try{    
                         //Ajout de session dans la classe instancee
-                        if( method.isAnnotationPresent(Session.class) ){
+                        if(method.isAnnotationPresent(Session.class) ){
                             HttpSession session = request.getSession();
                             ArrayList<String> lstTemp = Collections.list(session.getAttributeNames());
                             HashMap<String,Object> lst = new HashMap<>();  
@@ -402,6 +390,7 @@ public class FrontServlet extends HttpServlet {
                     }
                     //Return Json
                     if(view.getIsJson()){
+                        response.setContentType("application/json");
                         out.print(new Gson().toJson(view.getData()));
                     }else{      
                         if(view.getData() != null){
@@ -444,6 +433,12 @@ public class FrontServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        processRequest(request, response);
+    }
+    
+    @Override
+    protected void doHead(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         processRequest(request, response);
     }
