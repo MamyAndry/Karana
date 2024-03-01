@@ -4,6 +4,7 @@ import com.karana.etu2060.framework.annotation.Url;
 import com.karana.etu2060.framework.annotation.Scope;
 import com.karana.etu2060.framework.annotation.Session;
 import com.karana.etu2060.framework.annotation.Json;
+import com.karana.etu2060.framework.annotation.RestApi;
 import com.karana.etu2060.framework.annotation.Authentification;
 
 import com.karana.etu2060.framework.Mapping;
@@ -29,8 +30,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.sql.Date;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -49,15 +48,15 @@ import com.karana.etu2060.framework.annotation.Argument;
 )
 
 public class FrontServlet extends HttpServlet {
-    HashMap< String , Mapping > MappingUrls;
-    HashMap< String , Object > singleton;
+    HashMap<String, Mapping> mappingUrls;
+    HashMap<String, Object> singleton;
     String sessionName;
     String sessionProfile;
     String sessionFields;
 
 //SETTERS
     public void setMappingUrls(HashMap<String, Mapping> MappingUrls){
-        this.MappingUrls = MappingUrls;
+        this.mappingUrls = MappingUrls;
     }
     public void setSingleton(HashMap< String , Object > singleton){
         this.singleton = singleton;
@@ -74,7 +73,7 @@ public class FrontServlet extends HttpServlet {
 
 //GETTERS
     public HashMap<String, Mapping> getMappingUrls() {
-        return MappingUrls;
+        return mappingUrls;
     }
     public HashMap< String , Object >  getSingleton() {
         return singleton;
@@ -127,7 +126,6 @@ public class FrontServlet extends HttpServlet {
         return classes;
     }
 
-
     @Override
     public void init() throws ServletException{
         HashMap< String , Mapping > temp = new HashMap<>();
@@ -144,19 +142,25 @@ public class FrontServlet extends HttpServlet {
 
             for(String element : list){
                 Class<?> obj = Class.forName(element);
-                if( obj.isAnnotationPresent(Scope.class) ){
+                String url = "";
+
+                if(obj.isAnnotationPresent(RestApi.class)){
+                    RestApi rest = obj.getAnnotation(RestApi.class);
+                    url = rest.url();
+                }
+                if(obj.isAnnotationPresent(Scope.class) ){
                     Scope scope = obj.getAnnotation(Scope.class);
                     if(scope.isSingleton().equals("singleton")){
                         single.put(element , null);
                     }
                 }
-               Method[] methods = obj.getDeclaredMethods();
-               for(Method method : methods){
-                   if(method.isAnnotationPresent(Url.class)){
-                       Url annotation = method.getAnnotation(Url.class);
-                       temp.put(annotation.url(),new Mapping(element ,method.getName()));
-                   }
-               }
+                Method[] methods = obj.getDeclaredMethods();
+                for(Method method : methods){
+                    if(method.isAnnotationPresent(Url.class)){
+                        Url annotation = method.getAnnotation(Url.class);
+                        temp.put(url + annotation.url(),new Mapping(element ,method.getName()));
+                    }
+                }
             }
             this.setSingleton(single);
             this.setMappingUrls(temp);
@@ -215,7 +219,8 @@ public class FrontServlet extends HttpServlet {
         }
         return param.getName();
     }
-    public ArrayList<Object>  getFunctionArgument(HttpServletRequest request , Object obj ,  Method method) throws Exception{
+    
+    public ArrayList<Object> getFunctionArgument(HttpServletRequest request, Object obj, Method method) throws Exception{
         ArrayList<Object> lst = new ArrayList<>();
         Parameter[] param = method.getParameters();
         ArrayList<String> list = getListOfParameterNames(request);
@@ -224,25 +229,14 @@ public class FrontServlet extends HttpServlet {
                 if(attribut.contains("[]") && getParameterName(param[i]).equals(attribut.subSequence(0, attribut.toCharArray().length - 2))){
                         String[] value = request.getParameterValues(attribut);
                         Class<?> fieldType = obj.getClass().getDeclaredFields()[i].getType();
-                        Class<?> componentClass = fieldType.getComponentType();
-                        Object temp = Array.newInstance(componentClass , value.length);
-                        for(int j = 0 ; j < value.length ; j++){
-//                            System.out.println("value = " + value[j] ); 
-                            Array.set( temp , j , componentClass.getDeclaredConstructor(String.class).newInstance(value[j]));
-                        }
+                        Object temp = dynamicCast(fieldType, value);
                         lst.add(temp);
-                        break;
                 }else{
-//                    System.out.println(param[i]);
                     if(getParameterName(param[i]).equals(attribut)){
+                        String value = request.getParameter(attribut).trim();
                         Class<?> fieldType = param[i].getType();
-                        if(fieldType.getName().equals("java.sql.Date")){
-                            lst.add(Date.valueOf(request.getParameter(attribut).trim()));
-//                        }else if(fieldType.getName().equals("java.sql.Timestamp")){
-//                            lst.add(Timespan.valueOf(request.getParameter(attribut).trim()));
-                        }else{
-                            lst.add(fieldType.getDeclaredConstructor(String.class).newInstance(request.getParameter(attribut).trim()));
-                        }
+                        Object temp = dynamicCast(fieldType, value);
+                        lst.add(temp);
                     }
                 }
             }
@@ -256,20 +250,20 @@ public class FrontServlet extends HttpServlet {
         }
     }
     
-    public Object setDynamic(HttpServletRequest request , String className , Object obj) throws Exception{
+    public Object dynamicCast(Class<?> classType, Object value) throws Exception{
+        Gson gson = new Gson();
+        return gson.fromJson(gson.toJson(value), classType);
+    }
+
+    public Object setDynamic(HttpServletRequest request , Object obj) throws Exception{
         ArrayList<String> lst = getListOfParameterNames(request);
-//        System.out.println(lst);
         for(String attribut : lst){
             for(int i = 0 ; i < obj.getClass().getDeclaredFields().length ; i++){
                 //Check if the input is a checkbox type
                 if(attribut.contains("[]") && obj.getClass().getDeclaredFields()[i].getName().equals(attribut.subSequence(0, attribut.toCharArray().length - 2))){
                     String[] value = request.getParameterValues(attribut);
                     Class<?> fieldType = obj.getClass().getDeclaredFields()[i].getType();
-                    Class<?> componentClass = fieldType.getComponentType();
-                    Object temp = Array.newInstance(componentClass , value.length);
-                    for(int j = 0 ; j < value.length ; j++){
-                        Array.set( temp , j , componentClass.getDeclaredConstructor(String.class).newInstance(value[j]));
-                    }   
+                    Object temp = this.dynamicCast(fieldType, value);
                     obj.getClass().getDeclaredMethod("set" + capitalize(attribut.subSequence(0, attribut.toCharArray().length - 2).toString()) , fieldType ).invoke( obj , temp );
                 
                 }else{
@@ -280,17 +274,9 @@ public class FrontServlet extends HttpServlet {
                     }else{
                         if(obj.getClass().getDeclaredFields()[i].getName().equals(attribut)){
                             Class<?> fieldType = obj.getClass().getDeclaredFields()[i].getType();
-                            if(fieldType.getName().equals("java.sql.Date")){
-                                obj.getClass().getDeclaredMethod("set" + capitalize(attribut) , fieldType ).invoke( obj , Date.valueOf(request.getParameter(attribut).trim()) );
-                            }else if(fieldType.getName().equals("java.time.LocalDateTime")){
-                                LocalDateTime dateTime = LocalDateTime.parse(request.getParameter(attribut).trim());
-                                obj.getClass().getDeclaredMethod("set" + capitalize(attribut) , fieldType ).invoke( obj , dateTime );
-                            }
-                            else{
-                                Object temp = fieldType.getDeclaredConstructor(String.class).newInstance(request.getParameter(attribut).trim());
-                                obj.getClass().getDeclaredMethod("set" + capitalize(attribut) , fieldType ).invoke( obj , temp );
-                                break;
-                            }
+                            String value = request.getParameter(attribut).trim();
+                            Object temp = dynamicCast(fieldType, value);
+                            obj.getClass().getDeclaredMethod("set" + capitalize(attribut) , fieldType ).invoke( obj , temp );
                         }
                     }
                 }
@@ -301,10 +287,21 @@ public class FrontServlet extends HttpServlet {
     
     public Method getMethod(Method[] methods, String name){
         int i = 0;
-        while( !methods[i].getName().equals(name)){
+        while(!methods[i].getName().equals(name)){
             i++;
         }
         return methods[i];
+    }
+
+    public void treatJson(PrintWriter out, HttpServletRequest request, HttpServletResponse response, Method method, Object obj, ArrayList<Object> args) throws Exception{
+        if(method.getAnnotation(Url.class).method().getMethod().equals(request.getMethod())){
+            Gson gson = new Gson();
+            response.setContentType("application/json"); // Définir le type de contenu comme JSON
+            response.setCharacterEncoding("UTF-8");
+            out.print( gson.toJson(method.invoke(obj , args.toArray())));
+        }else{
+            out.print("Wrong method");
+        }
     }
     
     @SuppressWarnings("unchecked")
@@ -313,15 +310,18 @@ public class FrontServlet extends HttpServlet {
         response.setContentType("text/html;charset=UTF-8");
         PrintWriter out = response.getWriter();
         ModelView view = null;
-        String[] values = request.getRequestURI().split("/");
         Object obj = null;
-        String key = values[values.length-1];
+        String key = (String) request.getAttribute("servletPath");
         Mapping map = this.getMappingUrls().get(key);
         Method method = null;
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        response.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, HEAD");
+        response.addHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Origin, X-Requested-With, Content-Type, Accept");
+        response.addHeader("Access-Control-Max-Age", "1728000");
         try{
+            out.print(this.getMappingUrls());
             if(this.getMappingUrls().containsKey(key)){
-                map = this.getMappingUrls().get(key);
-                // out.print(this.getMappingUrls()+"</br>");
+                map = this.getMappingUrls().get(key);  
                 String methodstr = map.getMethods();
                 String keySingleton = map.getClassName();
                 if(this.getSingleton().containsKey(keySingleton)){
@@ -348,12 +348,11 @@ public class FrontServlet extends HttpServlet {
                 ArrayList<Object> args = new ArrayList<>();
                 // Verify if there are data sent
                 if( request.getParameterNames().hasMoreElements()){
-                    obj = setDynamic(request , map.getClassName() , obj);
+                    obj = setDynamic(request, obj);
                     args = getFunctionArgument( request , obj , method);
                 }
                 if( method.isAnnotationPresent(Json.class) ){
-                    System.out.println(request.getMethod());
-                    if(method.getAnnotation(Json.class).method().getMethod().equals(request.getMethod())){
+                    if(method.getAnnotation(Url.class).method().getMethod().equals(request.getMethod())){
                         Gson gson = new Gson();
                         response.setContentType("application/json"); // Définir le type de contenu comme JSON
                         response.setCharacterEncoding("UTF-8");
@@ -374,9 +373,7 @@ public class FrontServlet extends HttpServlet {
                             Method meth = obj.getClass().getDeclaredMethod("set"+capitalize(this.getSessionFields()), HashMap.class);
                             meth.invoke(obj , lst);
                         }
-                        // out.print(this.getMappingUrls() + "</br>");
                         view = (ModelView) method.invoke(obj,args.toArray());
-                        out.print("URL : " + view.getUrl());
                     }catch(Exception ex){
                         String errorUrl =  map.getErrorUrl();   
                         map = this.getMappingUrls().get(errorUrl);
@@ -395,18 +392,18 @@ public class FrontServlet extends HttpServlet {
                         }
                     }
                     //Invalidate session
-                    if( view.checkInvalidateSession() ){
+                    if(view.checkInvalidateSession()){
                         request.getSession().invalidate();
                     }
-                    if( !view.getSessionToDelete().isEmpty() ){
+                    if(!view.getSessionToDelete().isEmpty()){
                      for( String str : view.getSessionToDelete()){
                         request.getSession().removeAttribute(str);
                      }   
                     }
                     //Return Json
                     if(view.getIsJson()){
-                        out.print( new Gson().toJson(view.getData()));
-                    }else{
+                        out.print(new Gson().toJson(view.getData()));
+                    }else{      
                         if(view.getData() != null){
                             for(String dataKey : view.getData().keySet()){
                                 request.setAttribute(dataKey , view.getData().get(dataKey));
@@ -416,7 +413,7 @@ public class FrontServlet extends HttpServlet {
                             for(String dataKey : view.getSession().keySet()){
                                 HttpSession session = request.getSession();
                                 session.setAttribute(dataKey, view.getSession().get(dataKey));
-                              }
+                            }
                         }
                         request.getRequestDispatcher(view.getUrl()).forward(request,response);
                     }

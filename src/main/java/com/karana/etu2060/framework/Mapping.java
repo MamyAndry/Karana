@@ -3,11 +3,18 @@ package com.karana.etu2060.framework;
 import com.karana.etu2060.framework.annotation.Url;
 import java.lang.reflect.Method;
 
+
 public class Mapping {
     String className;
     String methods;
+    String httpMethods;
 
-//GETTERS
+
+    //GETTERS
+    public String getHttpMethods() {
+        return httpMethods;
+    }
+
     public String getClassName() {
         return className;
     }
@@ -24,14 +31,23 @@ public class Mapping {
     public void setMethods(String methods) {
         this.methods = methods;
     }
-    
+    public void setHttpMethods(String httpMethods) {
+        this.httpMethods = httpMethods;
+    }
+
 //CONSTRUCTOR
     public Mapping(String className, String methods) {
         this.setClassName(className);
         this.setMethods(methods);
     }
+
+    public Mapping(String className, String methods, String HttpMethod) {
+        this.setClassName(className);
+        this.setMethods(methods);
+        this.setHttpMethods(HttpMethod);
+    }
     
-     public Method getMethod(Method[] methods, String name){
+    public Method getMethod(Method[] methods, String name){
         int i = 0;
         while( !methods[i].getName().equals(name)) i++;
         return methods[i];

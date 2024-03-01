@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="3.1" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd">
+    <display-name> Mamisoa </display-name>
+    <filter>
+        <filter-name>FilterServlet</filter-name>
+        <filter-class>com.karana.etu2060.framework.servlet..FilterServlet</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>FilterServlet</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <servlet>
+        <servlet-name>FrontServlet</servlet-name>
+        <servlet-class>com.karana.etu2060.framework.servlet.FrontServlet</servlet-class>
+        <init-param>
+            <param-name>modelPackage</param-name>
+            <param-value>com.test.karana.model</param-value>
+        </init-param>
+
+        <init-param>
+            <param-name>Session_name</param-name>
+            <param-value>is_connected</param-value>
+        </init-param>
+
+        <init-param>
+            <param-name>Session_profile</param-name>
+            <param-value>profile</param-value>
+        </init-param>
+
+        <init-param>
+            <param-name>Session_fields</param-name>
+            <param-value>session</param-value>
+        </init-param>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>FrontServlet</servlet-name>
+        <url-pattern>/FrontServlet</url-pattern>
+    </servlet-mapping>
+    <session-config>
+        <session-timeout>
+            30
+        </session-timeout>
+    </session-config>
+</web-app>

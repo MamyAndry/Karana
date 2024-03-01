@@ -4,7 +4,7 @@ package com.karana.etu2060.framework.annotation.property;
  *
  * @author Mamisoa
  */
-public enum JsonMethods {
+public enum HttpMethod {
     GET("GET"),
     PUT("PUT"),
     POST("POST"),
@@ -19,7 +19,7 @@ public enum JsonMethods {
         return  this.method;
     }
 
-    private JsonMethods(String method){
+    private HttpMethod(String method){
         this.setMethod(method);
     }
 }
