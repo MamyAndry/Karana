@@ -5,6 +5,6 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 
-public @interface RestApi {
-    String url() default "";
+public @interface RequestMapping {
+    String path() default "";
 }

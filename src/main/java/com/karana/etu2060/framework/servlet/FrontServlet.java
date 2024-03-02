@@ -4,7 +4,7 @@ import com.karana.etu2060.framework.annotation.Url;
 import com.karana.etu2060.framework.annotation.Scope;
 import com.karana.etu2060.framework.annotation.Session;
 import com.karana.etu2060.framework.annotation.Json;
-import com.karana.etu2060.framework.annotation.RestApi;
+import com.karana.etu2060.framework.annotation.RequestMapping;
 import com.karana.etu2060.framework.annotation.Authentification;
 
 import com.karana.etu2060.framework.Mapping;
@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.annotation.*;
 
 import java.io.PrintWriter;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +40,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.gson.Gson;
-import com.karana.etu2060.framework.annotation.Argument;
+import com.karana.etu2060.framework.annotation.RequestParam;
 
 @MultipartConfig(
   fileSizeThreshold = 1024 * 1024 * 1, // 1 MB
@@ -144,9 +145,9 @@ public class FrontServlet extends HttpServlet {
                 Class<?> obj = Class.forName(element);
                 String url = "";
 
-                if(obj.isAnnotationPresent(RestApi.class)){
-                    RestApi rest = obj.getAnnotation(RestApi.class);
-                    url = rest.url();
+                if(obj.isAnnotationPresent(RequestMapping.class)){
+                    RequestMapping rest = obj.getAnnotation(RequestMapping.class);
+                    url = rest.path();
                 }
                 if(obj.isAnnotationPresent(Scope.class) ){
                     Scope scope = obj.getAnnotation(Scope.class);
@@ -213,32 +214,50 @@ public class FrontServlet extends HttpServlet {
         return res;
     } 
     public String getParameterName(Parameter param){
-        if(param.isAnnotationPresent(Argument.class)){
-            Argument arg = param.getAnnotation(Argument.class);
+        if(param.isAnnotationPresent(RequestParam.class)){
+            RequestParam arg = param.getAnnotation(RequestParam.class);
             return arg.parameterName();
         }
         return param.getName();
     }
+
+    public Object retrieveRequestBody(HttpServletRequest request, Class<?> objectClass) throws IOException{
+        BufferedReader reader = request.getReader();
+        StringBuilder jsonData = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            jsonData.append(line);
+            System.out.println(line);
+        }
+        return new Gson().fromJson(jsonData.toString(), objectClass);
+    }
+
     
     public ArrayList<Object> getFunctionArgument(HttpServletRequest request, Object obj, Method method) throws Exception{
         ArrayList<Object> lst = new ArrayList<>();
         Parameter[] param = method.getParameters();
+        System.out.println("PARAM LENGTH :" + param.length);
         ArrayList<String> list = getListOfParameterNames(request);
-        for(String attribut : list){
-            for(int i = 0; i < param.length; i++){
-                if(attribut.contains("[]") && getParameterName(param[i]).equals(attribut.subSequence(0, attribut.toCharArray().length - 2))){
-                        String[] value = request.getParameterValues(attribut);
-                        Class<?> fieldType = obj.getClass().getDeclaredFields()[i].getType();
-                        Object temp = dynamicCast(fieldType, value);
-                        lst.add(temp);
-                }else{
-                    if(getParameterName(param[i]).equals(attribut)){
-                        String value = request.getParameter(attribut).trim();
-                        Class<?> fieldType = param[i].getType();
-                        Object temp = dynamicCast(fieldType, value);
-                        lst.add(temp);
+        for(int i = 0; i < param.length; i++){
+            if(param[i].isAnnotationPresent(RequestParam.class)){
+                for(String attribut : list){
+                    if(attribut.contains("[]") && getParameterName(param[i]).equals(attribut.subSequence(0, attribut.toCharArray().length - 2))){
+                            String[] value = request.getParameterValues(attribut);
+                            Class<?> fieldType = obj.getClass().getDeclaredFields()[i].getType();
+                            Object temp = dynamicCast(fieldType, value);
+                            lst.add(temp);
+                    }else{
+                        if(getParameterName(param[i]).equals(attribut)){
+                            String value = request.getParameter(attribut).trim();
+                            Class<?> fieldType = param[i].getType();
+                            Object temp = dynamicCast(fieldType, value);
+                            lst.add(temp);
+                        }
                     }
                 }
+            }else{
+                Object temp = this.retrieveRequestBody(request, param[i].getType());
+                lst.add(temp);
             }
         }
         return lst;
@@ -335,13 +354,15 @@ public class FrontServlet extends HttpServlet {
                 }
                 ArrayList<Object> args = new ArrayList<>();
                 // Verify if there are data sent
-                if(request.getParameterNames().hasMoreElements()){
+                // if(request.getParameterNames().hasMoreElements()){
                     obj = setDynamic(request, obj);
-                    args = getFunctionArgument( request , obj , method);
-                }
-                if(method.isAnnotationPresent(Json.class) ){
+                    args = getFunctionArgument(request , obj , method);
+                // }
+                if(method.isAnnotationPresent(Json.class)){
+                    // out.println(httpMethod);
                     if(method.getAnnotation(Url.class).method().getMethod().equals(httpMethod)){
                         Gson gson = new Gson();
+                        System.out.println("SIZE  : " + args.size());
                         response.setContentType("application/json"); // Définir le type de contenu comme JSON
                         response.setCharacterEncoding("UTF-8");
                         out.print(gson.toJson(method.invoke(obj , args.toArray())));
@@ -409,7 +430,7 @@ public class FrontServlet extends HttpServlet {
                 }
             }
         }catch(Exception e){
-            e.printStackTrace();
+            e.printStackTrace(out);
         }
     }
 
