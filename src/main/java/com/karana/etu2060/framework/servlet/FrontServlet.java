@@ -6,7 +6,7 @@ import com.karana.etu2060.framework.annotation.Session;
 import com.karana.etu2060.framework.annotation.Json;
 import com.karana.etu2060.framework.annotation.RequestMapping;
 import com.karana.etu2060.framework.annotation.Authentification;
-
+import com.karana.etu2060.framework.annotation.Cors;
 import com.karana.etu2060.framework.Mapping;
 import com.karana.etu2060.framework.ModelView;
 import com.karana.etu2060.framework.FileUpload;
@@ -227,7 +227,6 @@ public class FrontServlet extends HttpServlet {
         String line;
         while ((line = reader.readLine()) != null) {
             jsonData.append(line);
-            System.out.println(line);
         }
         return new Gson().fromJson(jsonData.toString(), objectClass);
     }
@@ -236,7 +235,6 @@ public class FrontServlet extends HttpServlet {
     public ArrayList<Object> getFunctionArgument(HttpServletRequest request, Object obj, Method method) throws Exception{
         ArrayList<Object> lst = new ArrayList<>();
         Parameter[] param = method.getParameters();
-        System.out.println("PARAM LENGTH :" + param.length);
         ArrayList<String> list = getListOfParameterNames(request);
         for(int i = 0; i < param.length; i++){
             if(param[i].isAnnotationPresent(RequestParam.class)){
@@ -312,7 +310,7 @@ public class FrontServlet extends HttpServlet {
         return methods[i];
     }
     
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")  
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
@@ -322,8 +320,7 @@ public class FrontServlet extends HttpServlet {
         String httpMethod = (String) request.getAttribute("httpMethod");
         String key = (String) request.getAttribute("servletPath");
         Mapping map = this.getMappingUrls().get(key);
-        Method method = null;
-        response.addHeader("Access-Control-Allow-Origin", "*");
+        Method method = null;                        
         response.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, HEAD");
         response.addHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Origin, X-Requested-With, Content-Type, Accept");
         response.addHeader("Access-Control-Max-Age", "1728000");
@@ -353,16 +350,15 @@ public class FrontServlet extends HttpServlet {
                     throw new Exception("Please authenticate yourself<br>");
                 }
                 ArrayList<Object> args = new ArrayList<>();
+                String temp = obj.getClass().getAnnotation(Cors.class).allowedOrigin();
+                response.addHeader("Access-Control-Allow-Origin", temp);
+
                 // Verify if there are data sent
-                // if(request.getParameterNames().hasMoreElements()){
-                    obj = setDynamic(request, obj);
-                    args = getFunctionArgument(request , obj , method);
-                // }
+                obj = setDynamic(request, obj);
+                args = getFunctionArgument(request , obj , method);
                 if(method.isAnnotationPresent(Json.class)){
-                    // out.println(httpMethod);
                     if(method.getAnnotation(Url.class).method().getMethod().equals(httpMethod)){
                         Gson gson = new Gson();
-                        System.out.println("SIZE  : " + args.size());
                         response.setContentType("application/json"); // Définir le type de contenu comme JSON
                         response.setCharacterEncoding("UTF-8");
                         out.print(gson.toJson(method.invoke(obj , args.toArray())));
@@ -460,6 +456,13 @@ public class FrontServlet extends HttpServlet {
     
     @Override
     protected void doHead(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        processRequest(request, response);
+    }
+
+
+    @Override
+    protected void doOptions(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         processRequest(request, response);
     }

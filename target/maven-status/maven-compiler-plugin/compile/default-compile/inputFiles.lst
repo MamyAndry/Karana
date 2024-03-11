@@ -1,0 +1,15 @@
+/home/mamisoa/ITU/L3/Mr_Naina/karana/src/main/java/com/karana/etu2060/framework/annotation/Url.java
+/home/mamisoa/ITU/L3/Mr_Naina/karana/src/main/java/com/karana/etu2060/framework/annotation/Session.java
+/home/mamisoa/ITU/L3/Mr_Naina/karana/src/main/java/com/karana/etu2060/framework/servlet/FrontServlet.java
+/home/mamisoa/ITU/L3/Mr_Naina/karana/src/main/java/com/karana/etu2060/framework/annotation/RequestBody.java
+/home/mamisoa/ITU/L3/Mr_Naina/karana/src/main/java/com/karana/etu2060/framework/Mapping.java
+/home/mamisoa/ITU/L3/Mr_Naina/karana/src/main/java/com/karana/etu2060/framework/FileUpload.java
+/home/mamisoa/ITU/L3/Mr_Naina/karana/src/main/java/com/karana/etu2060/framework/annotation/Json.java
+/home/mamisoa/ITU/L3/Mr_Naina/karana/src/main/java/com/karana/etu2060/framework/annotation/RequestParam.java
+/home/mamisoa/ITU/L3/Mr_Naina/karana/src/main/java/com/karana/etu2060/framework/servlet/FilterServlet.java
+/home/mamisoa/ITU/L3/Mr_Naina/karana/src/main/java/com/karana/etu2060/framework/annotation/Authentification.java
+/home/mamisoa/ITU/L3/Mr_Naina/karana/src/main/java/com/karana/etu2060/framework/annotation/Scope.java
+/home/mamisoa/ITU/L3/Mr_Naina/karana/src/main/java/com/karana/etu2060/framework/annotation/RequestMapping.java
+/home/mamisoa/ITU/L3/Mr_Naina/karana/src/main/java/com/karana/etu2060/framework/annotation/property/HttpMethod.java
+/home/mamisoa/ITU/L3/Mr_Naina/karana/src/main/java/com/karana/etu2060/framework/annotation/Cors.java
+/home/mamisoa/ITU/L3/Mr_Naina/karana/src/main/java/com/karana/etu2060/framework/ModelView.java

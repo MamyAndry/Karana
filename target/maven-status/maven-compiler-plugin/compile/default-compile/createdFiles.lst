@@ -1,0 +1,15 @@
+com/karana/etu2060/framework/annotation/Cors.class
+com/karana/etu2060/framework/FileUpload.class
+com/karana/etu2060/framework/annotation/Session.class
+com/karana/etu2060/framework/annotation/RequestBody.class
+com/karana/etu2060/framework/annotation/Authentification.class
+com/karana/etu2060/framework/annotation/property/HttpMethod.class
+com/karana/etu2060/framework/annotation/Url.class
+com/karana/etu2060/framework/servlet/FilterServlet.class
+com/karana/etu2060/framework/annotation/Scope.class
+com/karana/etu2060/framework/annotation/RequestMapping.class
+com/karana/etu2060/framework/Mapping.class
+com/karana/etu2060/framework/servlet/FrontServlet.class
+com/karana/etu2060/framework/annotation/RequestParam.class
+com/karana/etu2060/framework/ModelView.class
+com/karana/etu2060/framework/annotation/Json.class
