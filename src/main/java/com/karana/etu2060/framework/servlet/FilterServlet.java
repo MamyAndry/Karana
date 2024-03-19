@@ -10,6 +10,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class FilterServlet implements Filter {
 
@@ -28,6 +29,12 @@ public class FilterServlet implements Filter {
 			throws IOException, ServletException {
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
+
+        httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+        httpResponse.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        httpResponse.setHeader("Access-Control-Allow-Headers", "content-type");
+
         String requestURI = httpRequest.getRequestURI();
         // Get the servlet path and set it as a request attribute
         String servletPath = httpRequest.getServletPath();
@@ -35,10 +42,14 @@ public class FilterServlet implements Filter {
         // Check if the request is for a .css or .js file or .jsp or .html
         if(!requestURI.contains(".") && !servletPath.contains("index")) {
             // Forward the request to FrontServlet
-            request.setAttribute("servletPath", servletPath + " " + httpMethod);
-            request.setAttribute("httpMethod", httpMethod);
-            RequestDispatcher dispatcher = httpRequest.getRequestDispatcher("/FrontServlet");
-            dispatcher.forward(request, response);
+            if(httpMethod.equals("OPTIONS")){
+                httpResponse.setStatus(HttpServletResponse.SC_OK);
+            }else{
+                request.setAttribute("servletPath", servletPath + " " + httpMethod);
+                request.setAttribute("httpMethod", httpMethod);
+                RequestDispatcher dispatcher = httpRequest.getRequestDispatcher("/FrontServlet");
+                dispatcher.forward(request, response);
+            }
         }else{
             // Proceed with the filter chain
             chain.doFilter(request, response);

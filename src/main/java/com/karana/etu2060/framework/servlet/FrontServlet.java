@@ -321,9 +321,6 @@ public class FrontServlet extends HttpServlet {
         String key = (String) request.getAttribute("servletPath");
         Mapping map = this.getMappingUrls().get(key);
         Method method = null;                        
-        response.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, HEAD");
-        response.addHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Origin, X-Requested-With, Content-Type, Accept");
-        response.addHeader("Access-Control-Max-Age", "1728000");
         try{
             if(this.getMappingUrls().containsKey(key)){
                 map = this.getMappingUrls().get(key);  
@@ -350,15 +347,18 @@ public class FrontServlet extends HttpServlet {
                     throw new Exception("Please authenticate yourself<br>");
                 }
                 ArrayList<Object> args = new ArrayList<>();
-                String temp = obj.getClass().getAnnotation(Cors.class).allowedOrigin();
-                response.addHeader("Access-Control-Allow-Origin", temp);
-
+                
                 // Verify if there are data sent
                 obj = setDynamic(request, obj);
                 args = getFunctionArgument(request , obj , method);
                 if(method.isAnnotationPresent(Json.class)){
                     if(method.getAnnotation(Url.class).method().getMethod().equals(httpMethod)){
                         Gson gson = new Gson();
+                        String temp = obj.getClass().getAnnotation(Cors.class).allowedOrigin();
+                        // response.addHeader("Access-Control-Allow-Origin", temp);
+                        // response.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, HEAD");
+                        // response.addHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Origin, X-Requested-With, Content-Type, Accept");
+                        // response.addHeader("Access-Control-Max-Age", "1728000");
                         response.setContentType("application/json"); // Définir le type de contenu comme JSON
                         response.setCharacterEncoding("UTF-8");
                         out.print(gson.toJson(method.invoke(obj , args.toArray())));
@@ -459,7 +459,6 @@ public class FrontServlet extends HttpServlet {
             throws ServletException, IOException {
         processRequest(request, response);
     }
-
 
     @Override
     protected void doOptions(HttpServletRequest request, HttpServletResponse response)
