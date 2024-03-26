@@ -3,7 +3,7 @@
     <display-name> Mamisoa </display-name>
     <filter>
         <filter-name>FilterServlet</filter-name>
-        <filter-class>com.karana.etu2060.framework.servlet..FilterServlet</filter-class>
+        <filter-class>com.karana.etu2060.framework.servlet.FilterServlet</filter-class>
     </filter>
     <filter-mapping>
         <filter-name>FilterServlet</filter-name>

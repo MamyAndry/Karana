@@ -40,6 +40,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.karana.etu2060.framework.annotation.RequestParam;
 
 @MultipartConfig(
@@ -225,10 +226,11 @@ public class FrontServlet extends HttpServlet {
         BufferedReader reader = request.getReader();
         StringBuilder jsonData = new StringBuilder();
         String line;
+        Gson gson = new GsonBuilder().setDateFormat("YYYY-MM-DD'T'HH:mm:ss.SSSZ").create();
         while ((line = reader.readLine()) != null) {
             jsonData.append(line);
         }
-        return new Gson().fromJson(jsonData.toString(), objectClass);
+        return gson.fromJson(jsonData.toString(), objectClass);
     }
 
     
