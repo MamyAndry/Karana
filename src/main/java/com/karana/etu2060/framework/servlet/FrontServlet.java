@@ -6,7 +6,6 @@ import com.karana.etu2060.framework.annotation.Session;
 import com.karana.etu2060.framework.annotation.Json;
 import com.karana.etu2060.framework.annotation.RequestMapping;
 import com.karana.etu2060.framework.annotation.Authentification;
-import com.karana.etu2060.framework.annotation.Cors;
 import com.karana.etu2060.framework.Mapping;
 import com.karana.etu2060.framework.ModelView;
 import com.karana.etu2060.framework.FileUpload;
@@ -226,7 +225,8 @@ public class FrontServlet extends HttpServlet {
         BufferedReader reader = request.getReader();
         StringBuilder jsonData = new StringBuilder();
         String line;
-        Gson gson = new GsonBuilder().setDateFormat("YYYY-MM-DD'T'HH:mm:ss.SSSZ").create();
+        Gson gson = new GsonBuilder()
+        .setDateFormat("YYYY-MM-DD'T'HH:mm:ss.SSSZ").create();
         while ((line = reader.readLine()) != null) {
             jsonData.append(line);
         }
@@ -353,10 +353,13 @@ public class FrontServlet extends HttpServlet {
                 // Verify if there are data sent
                 obj = setDynamic(request, obj);
                 args = getFunctionArgument(request , obj , method);
+                GsonBuilder gsonBuilder = new GsonBuilder();
+                gsonBuilder.setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+                gsonBuilder.setPrettyPrinting();
                 if(method.isAnnotationPresent(Json.class)){
                     if(method.getAnnotation(Url.class).method().getMethod().equals(httpMethod)){
-                        Gson gson = new Gson();
-                        String temp = obj.getClass().getAnnotation(Cors.class).allowedOrigin();
+                        Gson gson = gsonBuilder.create();
+                        // String temp = obj.getClass().getAnnotation(Cors.class).allowedOrigin();
                         // response.addHeader("Access-Control-Allow-Origin", temp);
                         // response.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, HEAD");
                         // response.addHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Origin, X-Requested-With, Content-Type, Accept");
@@ -410,7 +413,7 @@ public class FrontServlet extends HttpServlet {
                     //Return Json
                     if(view.getIsJson()){
                         response.setContentType("application/json");
-                        out.print(new Gson().toJson(view.getData()));
+                        out.print(gsonBuilder.create().toJson(view.getData()));
                     }else{      
                         if(view.getData() != null){
                             for(String dataKey : view.getData().keySet()){
