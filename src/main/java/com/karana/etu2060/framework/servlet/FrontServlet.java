@@ -225,8 +225,7 @@ public class FrontServlet extends HttpServlet {
         BufferedReader reader = request.getReader();
         StringBuilder jsonData = new StringBuilder();
         String line;
-        Gson gson = new GsonBuilder()
-        .setDateFormat("YYYY-MM-DD'T'HH:mm:ss.SSSZ").create();
+        Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").create();
         while ((line = reader.readLine()) != null) {
             jsonData.append(line);
         }
